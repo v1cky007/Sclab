@@ -1,1 +1,19 @@
+import numpy as np
 
+X = np.array([[0,0],[0,1],[1,0],[1,1]])
+y = np.array([[0],[1],[1],[0]])
+
+np.random.seed(0)
+w1, w2 = np.random.rand(2,2), np.random.rand(2,1)
+
+for _ in range(10000):
+    h = 1 / (1 + np.exp(-X @ w1))
+    o = 1 / (1 + np.exp(-h @ w2))
+    e = y - o
+    w2 += 0.1 * h.T @ (e * o * (1 - o))
+    w1 += 0.1 * X.T @ ((e * o * (1 - o)) @ w2.T * h * (1 - h))
+
+print("XOR Predictions:")
+for x in X:
+    result = 1 / (1 + np.exp(-(1 / (1 + np.exp(-x @ w1)) @ w2)))
+    print(f"Input {x} → Output: {result[0]:.3f}")
