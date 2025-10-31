@@ -1,0 +1,20 @@
+import numpy as np, matplotlib.pyplot as plt
+
+T, F = np.arange(0, 41), np.arange(0, 101)
+cold  = lambda x: np.clip((20 - x)/20, 0, 1)
+warm  = lambda x: np.clip(np.minimum((x - 15)/10, (35 - x)/10), 0, 1)
+hot   = lambda x: np.clip((x - 30)/10, 0, 1)
+slow  = lambda x: np.clip((50 - x)/50, 0, 1)
+medium= lambda x: np.clip(np.minimum((x - 25)/25, (75 - x)/25), 0, 1)
+fast  = lambda x: np.clip((x - 50)/50, 0, 1)
+fan_speed = lambda t: (cold(t)*20 + warm(t)*50 + hot(t)*90)/(cold(t)+warm(t)+hot(t))
+
+temp = 28
+print(f"\nTemp: {temp}°C\nFan Speed: {fan_speed(temp):.2f}%")
+
+for data, lbl, rng in [( [cold(T), warm(T), hot(T)], 'Temperature (°C)', T ),
+                       ( [slow(F), medium(F), fast(F)], 'Fan Speed (%)', F )]:
+    plt.figure()
+    for y, name in zip(data, ['Cold','Warm','Hot'] if 'Temp' in lbl else ['Slow','Medium','Fast']):
+        plt.plot(rng, y, label=name)
+    plt.xlabel(lbl); plt.ylabel('Membership'); plt.legend(); plt.grid(); plt.show()
