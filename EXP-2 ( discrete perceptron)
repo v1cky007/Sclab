@@ -1,0 +1,11 @@
+import numpy as np
+X, y = np.array([[2,3],[3,2],[1,1],[5,7],[6,8],[7,6]]), np.array([0,0,0,1,1,1])
+w, b, lr = np.zeros(2), 0, 0.1
+
+for _ in range(100):
+    for xi, yi in zip(X, y):
+        pred = 1 if np.dot(w, xi) + b > 0 else 0
+        w += lr * (yi - pred) * xi; b += lr * (yi - pred)
+
+for d in [[4,5],[2,2]]:
+    print(f"{d} → Class {1 if np.dot(w,d)+b>0 else 0}")
