@@ -1,0 +1,45 @@
+import numpy as np, matplotlib.pyplot as plt
+
+# --- Choose experiment: 1=1D, 2=2D sine, 3=3D nonlinear ---
+exp = 2
+f = [lambda x:x*np.sin(10*np.pi*x)+1, 
+     lambda x,y:np.sin(x)+np.sin(y), 
+     lambda x,y,z:x*np.sin(y)+z**2][exp-1]
+dim = [1,2,3][exp-1]
+
+# --- Initialize population ---
+pop = np.random.uniform(0, 2*np.pi, (20, dim))
+
+# --- Genetic Algorithm ---
+for _ in range(50):
+    fit = f(*[pop[:,i] for i in range(dim)])
+    p = pop[np.argsort(fit)][-2:]                   # best 2 parents
+    pop = np.vstack((p, p[0]+np.random.uniform(-0.1,0.1,(18,dim))))  # next gen
+
+# --- Best solution ---
+fit = f(*[pop[:,i] for i in range(dim)])
+best_idx = np.argmax(fit)
+best = pop[best_idx]
+
+print("\n--- Population Fitness ---")
+for i, ind in enumerate(pop):
+    print(f"Individual {i+1}: {np.round(ind,3)} -> f = {round(fit[i],3)}")
+print("\nBest Solution")
+print(f"Individual {best_idx+1}: {np.round(best,3)} -> f = {round(fit[best_idx],3)}")
+
+# --- Visualization ---
+plt.figure(figsize=(6,4))
+if dim==1:
+    x = np.linspace(0,2*np.pi,200)
+    plt.plot(x,f(x),label='Fitness Curve')
+    plt.scatter(pop[:,0], f(pop[:,0]), color='orange', edgecolors='k', s=60, label='Population')
+    plt.scatter(best[0], f(best[0]), color='red', s=100, label='Best')
+    plt.xlabel('x'); plt.ylabel('f(x)'); plt.legend(); plt.grid(True)
+elif dim==2:
+    plt.scatter(pop[:,0], pop[:,1], c=fit, cmap='viridis', s=80)
+    plt.colorbar(label='Fitness')
+else:
+    ax = plt.figure().add_subplot(111, projection='3d')
+    ax.scatter(pop[:,0], pop[:,1], pop[:,2], c=fit, cmap='viridis', s=50)
+plt.title("Genetic Algorithm Maximization")
+plt.show()
