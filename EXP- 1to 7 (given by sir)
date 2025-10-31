@@ -1,0 +1,431 @@
+# ===============================================================
+# EXPERIMENT 1: FUZZY LOGIC FAN CONTROLLER
+# ===============================================================
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define temperature and fan speed ranges
+temperature = np.arange(0, 41, 1)   # 0°C to 40°C
+fan = np.arange(0, 101, 1)          # 0% to 100%
+
+# Fuzzy membership functions for Temperature
+def cold(x):
+    return np.clip((20 - x) / 20, 0, 1)
+
+def warm(x):
+    return np.clip(np.minimum((x - 15) / 10, (35 - x) / 10), 0, 1)
+
+def hot(x):
+    return np.clip((x - 30) / 10, 0, 1)
+
+# Fuzzy membership functions for Fan Speed
+def slow(x):
+    return np.clip((50 - x) / 50, 0, 1)
+
+def medium(x):
+    return np.clip(np.minimum((x - 25) / 25, (75 - x) / 25), 0, 1)
+
+def fast(x):
+    return np.clip((x - 50) / 50, 0, 1)
+
+# Fuzzy inference rule (simple weighted average)
+def fan_speed(temp):
+    c = cold(temp)
+    w = warm(temp)
+    h = hot(temp)
+    speed = (c * 20 + w * 50 + h * 90) / (c + w + h)
+    return speed
+
+# Example: user input
+user_temp = 28
+speed = fan_speed(user_temp)
+
+print("\n--- Fuzzy Logic Fan Controller ---")
+print(f"Temperature input : {user_temp} °C")
+print(f"Calculated fan speed : {speed:.2f} %")
+
+# Plot Temperature Membership Functions
+plt.figure(figsize=(7, 4))
+plt.plot(temperature, [cold(x) for x in temperature], label='Cold')
+plt.plot(temperature, [warm(x) for x in temperature], label='Warm')
+plt.plot(temperature, [hot(x) for x in temperature], label='Hot')
+plt.xlabel('Temperature (°C)')
+plt.ylabel('Membership Degree')
+plt.title('Temperature Membership Functions')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plot Fan Speed Membership Functions
+plt.figure(figsize=(7, 4))
+plt.plot(fan, [slow(x) for x in fan], label='Slow')
+plt.plot(fan, [medium(x) for x in fan], label='Medium')
+plt.plot(fan, [fast(x) for x in fan], label='Fast')
+plt.xlabel('Fan Speed (%)')
+plt.ylabel('Membership Degree')
+plt.title('Fan Speed Membership Functions')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+# ===============================================================
+# EXPERIMENT 2: DISCRETE PERCEPTRON CLASSIFIER
+# ===============================================================
+
+import numpy as np
+
+class DiscretePerceptron:
+    def _init_(self, input_size):
+        self.weights = np.zeros(input_size)
+        self.bias = 0
+
+    def predict(self, inputs):
+        activation = np.dot(self.weights, inputs) + self.bias
+        return 1 if activation > 0 else 0
+
+    def train(self, inputs, targets, learning_rate=0.1, epochs=100):
+        for _ in range(epochs):
+            for x, y in zip(inputs, targets):
+                prediction = self.predict(x)
+                error = y - prediction
+                self.weights += learning_rate * error * x
+                self.bias += learning_rate * error
+
+def main():
+    class_0 = np.array([[2, 3], [3, 2], [1, 1]])
+    class_1 = np.array([[5, 7], [6, 8], [7, 6]])
+    inputs = np.vstack((class_0, class_1))
+    targets = np.array([0, 0, 0, 1, 1, 1])
+    perceptron = DiscretePerceptron(input_size=2)
+    perceptron.train(inputs, targets)
+
+    test_data = np.array([[4, 5], [2, 2]])
+    for data in test_data:
+        prediction = perceptron.predict(data)
+        print(f"Data {data} belongs to class {prediction}")
+
+if _name_ == "_main_":
+    main()
+
+
+# ===============================================================
+# EXPERIMENT 3: XOR NEURAL NETWORK
+# ===============================================================
+
+import numpy as np
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+input_data = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+target_data = np.array([[0], [1], [1], [0]])
+
+input_size = 2
+hidden_size = 2
+output_size = 1
+learning_rate = 0.1
+epochs = 10000
+
+np.random.seed(42)
+hidden_weights = np.random.uniform(size=(input_size, hidden_size))
+output_weights = np.random.uniform(size=(hidden_size, output_size))
+
+for _ in range(epochs):
+    hidden_layer_activation = np.dot(input_data, hidden_weights)
+    hidden_layer_output = sigmoid(hidden_layer_activation)
+    output_layer_activation = np.dot(hidden_layer_output, output_weights)
+    predicted_output = sigmoid(output_layer_activation)
+
+    error = target_data - predicted_output
+    output_delta = error * sigmoid_derivative(predicted_output)
+    hidden_layer_error = output_delta.dot(output_weights.T)
+    hidden_layer_delta = hidden_layer_error * sigmoid_derivative(hidden_layer_output)
+
+    output_weights += hidden_layer_output.T.dot(output_delta) * learning_rate
+    hidden_weights += input_data.T.dot(hidden_layer_delta) * learning_rate
+
+print("\nTrained Network Predictions:")
+for data in input_data:
+    hidden_layer_activation = np.dot(data, hidden_weights)
+    hidden_layer_output = sigmoid(hidden_layer_activation)
+    output_layer_activation = np.dot(hidden_layer_output, output_weights)
+    predicted_output = sigmoid(output_layer_activation)
+    print(f"Input: {data} => Predicted Output: {np.round(predicted_output[0], 3)}")
+
+
+# ===============================================================
+# EXPERIMENT 4: SELF ORGANIZING MAP (SOM)
+# ===============================================================
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+data = np.random.rand(100, 2)
+grid_size = (10, 10)
+input_dim = 2
+learning_rate = 0.2
+num_epochs = 100
+weight_matrix = np.random.rand(grid_size[0], grid_size[1], input_dim)
+
+for epoch in range(num_epochs):
+    for input_vector in data:
+        distances = np.linalg.norm(weight_matrix - input_vector, axis=-1)
+        bmu_coords = np.unravel_index(np.argmin(distances), distances.shape)
+        for i in range(grid_size[0]):
+            for j in range(grid_size[1]):
+                distance_to_bmu = np.linalg.norm(np.array([i, j]) - np.array(bmu_coords))
+                influence = np.exp(-distance_to_bmu*2 / (2 * (epoch + 1)*2))
+                weight_matrix[i, j] += influence * learning_rate * (input_vector - weight_matrix[i, j])
+
+cluster_map = np.zeros((grid_size[0], grid_size[1]), dtype=int)
+for i in range(grid_size[0]):
+    for j in range(grid_size[1]):
+        distances = np.linalg.norm(data - weight_matrix[i, j], axis=-1)
+        cluster_map[i, j] = np.argmin(distances)
+
+plt.figure(figsize=(8, 8))
+plt.pcolormesh(cluster_map, cmap='viridis', shading='auto')
+plt.colorbar(label='Cluster')
+plt.scatter(data[:, 0] * grid_size[0], data[:, 1] * grid_size[1], color='red', s=10, label='Data points')
+plt.legend()
+plt.title('Self-Organizing Map Clustering')
+plt.show()
+
+
+# ===============================================================
+# EXPERIMENT 5: GENETIC ALGORITHM (SINGLE VARIABLE)
+# ===============================================================
+
+import random
+import matplotlib.pyplot as plt
+
+def fitness_function(x):
+    return -x**2 + 6*x + 9
+
+def initialize_population(pop_size, lower_bound, upper_bound):
+    return [random.uniform(lower_bound, upper_bound) for _ in range(pop_size)]
+
+def select_parents(population):
+    total_fitness = sum(fitness_function(ind) for ind in population)
+    roulette_wheel = [fitness_function(ind) / total_fitness for ind in population]
+    parent1 = random.choices(population, weights=roulette_wheel)[0]
+    parent2 = random.choices(population, weights=roulette_wheel)[0]
+    return parent1, parent2
+
+def crossover(parent1, parent2, crossover_prob=0.7):
+    if random.random() < crossover_prob:
+        child1 = (parent1 + parent2) / 2
+        child2 = (parent1 + parent2) / 2
+        return child1, child2
+    else:
+        return parent1, parent2
+
+def mutate(individual, mutation_prob=0.01):
+    if random.random() < mutation_prob:
+        individual += random.uniform(-1, 1)
+    return individual
+
+def genetic_algorithm(generations, pop_size, lower_bound, upper_bound):
+    population = initialize_population(pop_size, lower_bound, upper_bound)
+    best_fitness_per_gen = []
+
+    for gen in range(generations):
+        new_population = []
+        while len(new_population) < pop_size:
+            parent1, parent2 = select_parents(population)
+            child1, child2 = crossover(parent1, parent2)
+            child1 = mutate(child1)
+            child2 = mutate(child2)
+            new_population.extend([child1, child2])
+
+        population = new_population[:pop_size]
+        best = max(population, key=fitness_function)
+        best_fitness = fitness_function(best)
+        best_fitness_per_gen.append(best_fitness)
+        print(f"Generation {gen+1}: Best individual = {round(best, 4)}, Fitness = {round(best_fitness, 4)}")
+
+    return best, best_fitness_per_gen
+
+if _name_ == "_main_":
+    generations = 50
+    pop_size = 100
+    lower_bound = -10
+    upper_bound = 10
+
+    best_solution, fitness_history = genetic_algorithm(generations, pop_size, lower_bound, upper_bound)
+    print(f"\nBest solution found: x = {round(best_solution, 4)}, Fitness = {round(fitness_function(best_solution), 4)}")
+
+    plt.plot(fitness_history, marker='o', color='blue', label='Best Fitness')
+    plt.title('Genetic Algorithm Fitness Over Generations')
+    plt.xlabel('Generation')
+    plt.ylabel('Best Fitness')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+# ===============================================================
+# EXPERIMENT 6: GENETIC ALGORITHM (TWO VARIABLE - SIN FUNCTION)
+# ===============================================================
+
+import random
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def fitness_function(x, y):
+    return math.sin(x) + math.sin(y)
+
+def initialize_population(pop_size, lower_bound, upper_bound):
+    return [(random.uniform(lower_bound, upper_bound),
+             random.uniform(lower_bound, upper_bound)) for _ in range(pop_size)]
+
+def select_parents(population):
+    total_fitness = sum(fitness_function(x, y) for x, y in population)
+    roulette_wheel = [fitness_function(x, y) / total_fitness for x, y in population]
+    parent1 = random.choices(population, weights=roulette_wheel)[0]
+    parent2 = random.choices(population, weights=roulette_wheel)[0]
+    return parent1, parent2
+
+def crossover(parent1, parent2, crossover_prob=0.7):
+    if random.random() < crossover_prob:
+        child1 = (parent1[0], parent2[1])
+        child2 = (parent2[0], parent1[1])
+        return child1, child2
+    else:
+        return parent1, parent2
+
+def mutate(individual, mutation_prob=0.01):
+    x, y = individual
+    if random.random() < mutation_prob:
+        x += random.uniform(-0.1, 0.1)
+    if random.random() < mutation_prob:
+        y += random.uniform(-0.1, 0.1)
+    return x, y
+
+def genetic_algorithm(generations, pop_size, lower_bound, upper_bound):
+    population = initialize_population(pop_size, lower_bound, upper_bound)
+    best_fitness_history = []
+
+    for gen in range(generations):
+        new_population = []
+        while len(new_population) < pop_size:
+            parent1, parent2 = select_parents(population)
+            child1, child2 = crossover(parent1, parent2)
+            child1 = mutate(child1)
+            child2 = mutate(child2)
+            new_population.extend([child1, child2])
+
+        population = new_population[:pop_size]
+        best_individual = max(population, key=lambda ind: fitness_function(*ind))
+        best_fitness = fitness_function(*best_individual)
+        best_fitness_history.append(best_fitness)
+        print(f"Generation {gen+1}: Best individual = {best_individual}, Fitness = {best_fitness}")
+
+    return max(population, key=lambda ind: fitness_function(*ind)), best_fitness_history
+
+if _name_ == "_main_":
+    generations = 50
+    pop_size = 100
+    lower_bound = -2 * math.pi
+    upper_bound = 2 * math.pi
+
+    best_solution, fitness_history = genetic_algorithm(generations, pop_size, lower_bound, upper_bound)
+    print(f"\nBest solution found: {best_solution}, Fitness = {fitness_function(*best_solution)}")
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(range(1, generations+1), fitness_history, marker='o', color='blue')
+    plt.title("Genetic Algorithm Convergence on f(x,y) = sin(x) + sin(y)")
+    plt.xlabel("Generation")
+    plt.ylabel("Best Fitness")
+    plt.grid(True)
+    plt.show()
+
+
+# ===============================================================
+# EXPERIMENT 7: GENETIC ALGORITHM (THREE VARIABLE - NONLINEAR FUNCTION)
+# ===============================================================
+
+import random
+import math
+
+def fitness_function(x, y, z):
+    return -(x*2 + y2 + z*2) + 10 * (
+        math.cos(2 * math.pi * x) +
+        math.cos(2 * math.pi * y) +
+        math.cos(2 * math.pi * z)
+    )
+
+def initialize_population(pop_size, lower_bound, upper_bound):
+    return [
+        (
+            random.uniform(lower_bound, upper_bound),
+            random.uniform(lower_bound, upper_bound),
+            random.uniform(lower_bound, upper_bound)
+        ) for _ in range(pop_size)
+    ]
+
+def select_parents(population):
+    total_fitness = sum(fitness_function(x, y, z) for x, y, z in population)
+    roulette_wheel = [fitness_function(x, y, z) / total_fitness for x, y, z in population]
+    parent1 = random.choices(population, weights=roulette_wheel)[0]
+    parent2 = random.choices(population, weights=roulette_wheel)[0]
+    return parent1, parent2
+
+def crossover(parent1, parent2, crossover_prob=0.7):
+    if random.random() < crossover_prob:
+        alpha = random.uniform(0, 1)
+        child1 = (
+            alpha * parent1[0] + (1 - alpha) * parent2[0],
+            alpha * parent1[1] + (1 - alpha) * parent2[1],
+            alpha * parent1[2] + (1 - alpha) * parent2[2]
+        )
+        beta = random.uniform(0, 1)
+        child2 = (
+            beta * parent1[0] + (1 - beta) * parent2[0],
+            beta * parent1[1] + (1 - beta) * parent2[1],
+            beta * parent1[2] + (1 - beta) * parent2[2]
+        )
+        return child1, child2
+    else:
+        return parent1, parent2
+
+def mutate(individual, mutation_prob=0.01):
+    x, y, z = individual
+    if random.random() < mutation_prob:
+        x += random.uniform(-0.1, 0.1)
+    if random.random() < mutation_prob:
+        y += random.uniform(-0.1, 0.1)
+    if random.random() < mutation_prob:
+        z += random.uniform(-0.1, 0.1)
+    return x, y, z
+
+def genetic_algorithm(generations, pop_size, lower_bound, upper_bound):
+    population = initialize_population(pop_size, lower_bound, upper_bound)
+    for gen in range(generations):
+        new_population = []
+        while len(new_population) < pop_size:
+            parent1, parent2 = select_parents(population)
+            child1, child2 = crossover(parent1, parent2)
+            child1 = mutate(child1)
+            child2 = mutate(child2)
+            new_population.extend([child1, child2])
+        population = new_population[:pop_size]
+        best_individual = max(population, key=lambda ind: fitness_function(*ind))
+        print(f"Generation {gen+1}: Best individual - {best_individual}, Fitness - {fitness_function(*best_individual)}")
+    return max(population, key=lambda ind: fitness_function(*ind))
+
+if _name_ == "_main_":
+    generations = 50
+    pop_size = 100
+    lower_bound = -1
+    upper_bound = 1
+    best_solution = genetic_algorithm(generations, pop_size, lower_bound, upper_bound)
+    print(f"\nBest solution found: {best_solution}, Fitness: {fitness_function(*best_solution)}")
